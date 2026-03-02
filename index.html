@@ -1,353 +1,419 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>夜坝卖命时间 - 增强设置版</title>
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-:root {
-  --bg: #0b1220;
-  --text: #e0eaff;
-  --accent: #a0bfff;
-}
-body {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg);
-  color: var(--text);
-  font-family: "Segoe UI", Roboto, sans-serif;
-  position: relative;
-}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0b1220">
+    <title>夜坝卖命时间 - 全屏适配版</title>
+    <style>
+        /* 基础重置 - 消除所有默认边距和滚动 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-#now-time {
-  font-size: 64px;
-  font-weight: bold;
-  margin-bottom: 16px;
-}
-#target-time {
-  font-size: 28px;
-  color: var(--accent);
-}
+        /* 适配异形屏（刘海/挖孔），兼容所有手机系统 */
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden !important;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            position: relative;
+        }
 
-/* 右上角设置按钮 - 完美居中对齐 */
-#settings-btn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: #2a3548;
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-}
+        :root {
+            --bg: #0b1220;
+            --text: #e0eaff;
+            --accent: #a0bfff;
+            --setting-btn-bg: #2a3548;
+        }
 
-/* 弹窗遮罩 */
-#modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-}
-#modal.show {
-  display: flex;
-}
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            /* 防止内容被刘海遮挡的兜底 */
+            min-height: -webkit-fill-available;
+        }
 
-/* 弹窗内容 */
-.panel {
-  background: #151c2d;
-  padding: 24px;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 420px;
-  color: white;
-}
-.panel h3 {
-  margin-bottom: 16px;
-}
-.item {
-  margin: 12px 0;
-}
-.item label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 14px;
-  color: #ccc;
-}
-.item input, .item select {
-  width: 100%;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: none;
-  background: #242c3d;
-  color: white;
-  font-size: 16px;
-}
-.btns {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-button {
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-}
-#save {
-  background: #3d6dff;
-  color: white;
-  flex: 1;
-}
-#close {
-  background: #333;
-  color: white;
-  flex: 1;
-}
+        /* 核心时间显示区域 - 居中且适配所有屏幕 */
+        .time-container {
+            width: 100%;
+            text-align: center;
+            padding: 0 20px;
+            z-index: 1;
+        }
 
-.theme-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 8px;
-}
-.theme {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 2px solid transparent;
-}
-.theme.active {
-  border-color: white;
-}
+        #now-time {
+            font-size: clamp(48px, 15vw, 72px); /* 自适应字体大小 */
+            font-weight: bold;
+            margin-bottom: clamp(12px, 3vw, 20px);
+            letter-spacing: 1px;
+        }
 
-.color-inputs {
-  display: flex;
-  gap: 8px;
-  margin-top: 10px;
-}
-.color-inputs input {
-  flex: 1;
-  height: 36px;
-  padding: 0 4px;
-}
-</style>
+        #target-time {
+            font-size: clamp(20px, 6vw, 32px);
+            color: var(--accent);
+            line-height: 1.4;
+        }
+
+        /* 右上角设置按钮 - 适配异形屏，不被遮挡 */
+        #settings-btn {
+            position: absolute;
+            top: calc(20px + env(safe-area-inset-top));
+            right: calc(20px + env(safe-area-inset-right));
+            width: clamp(40px, 8vw, 50px);
+            height: clamp(40px, 8vw, 50px);
+            border-radius: 50%;
+            border: none;
+            background: var(--setting-btn-bg);
+            color: white;
+            font-size: clamp(18px, 4vw, 24px);
+            cursor: pointer;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            transition: background 0.2s;
+        }
+
+        #settings-btn:hover {
+            background: #3a4863;
+        }
+
+        /* 弹窗遮罩 - 全屏覆盖 */
+        #modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+
+        #modal.show {
+            display: flex;
+        }
+
+        /* 弹窗内容 - 适配手机/电脑 */
+        .panel {
+            background: #151c2d;
+            padding: clamp(20px, 5vw, 30px);
+            border-radius: 12px;
+            width: clamp(300px, 90vw, 450px);
+            max-width: 100%;
+            color: white;
+            max-height: 90vh;
+            overflow-y: auto; /* 仅弹窗内允许滚动（内容过多时） */
+        }
+
+        .panel h3 {
+            margin-bottom: clamp(15px, 4vw, 20px);
+            font-size: clamp(18px, 4vw, 22px);
+            text-align: center;
+        }
+
+        .item {
+            margin: clamp(10px, 3vw, 15px) 0;
+        }
+
+        .item label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: clamp(14px, 2.5vw, 16px);
+            color: #ccc;
+        }
+
+        .item input, .item select {
+            width: 100%;
+            padding: clamp(8px, 2vw, 12px);
+            border-radius: 6px;
+            border: none;
+            background: #242c3d;
+            color: white;
+            font-size: clamp(14px, 2.5vw, 16px);
+        }
+
+        .btns {
+            display: flex;
+            gap: 10px;
+            margin-top: clamp(20px, 5vw, 25px);
+        }
+
+        button {
+            padding: clamp(8px, 2vw, 12px);
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: clamp(14px, 2.5vw, 16px);
+        }
+
+        #save {
+            background: #3d6dff;
+            color: white;
+            flex: 1;
+        }
+
+        #close {
+            background: #333;
+            color: white;
+            flex: 1;
+        }
+
+        .theme-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .theme {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .theme.active {
+            border-color: white;
+        }
+
+        .color-inputs {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .color-inputs input {
+            flex: 1;
+            height: 36px;
+            padding: 0 4px;
+        }
+
+        /* 适配横屏手机 */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .time-container {
+                transform: scale(0.9);
+            }
+            #settings-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+                top: calc(10px + env(safe-area-inset-top));
+                right: calc(10px + env(safe-area-inset-right));
+            }
+        }
+    </style>
 </head>
 <body>
+    <button id="settings-btn">⚙️</button>
 
-<button id="settings-btn">⚙️</button>
-
-<div id="now-time">--:--:--</div>
-<div id="target-time">距离夜坝卖命时间: --分--秒</div>
-
-<!-- 设置弹窗 -->
-<div id="modal">
-  <div class="panel">
-    <h3>设置</h3>
-    <div class="item">
-      <label>时间倍数（分钟）</label>
-      <input type="number" id="multi" value="4" min="1">
+    <div class="time-container">
+        <div id="now-time">--:--:--</div>
+        <div id="target-time">距离夜坝卖命时间: --分--秒</div>
     </div>
-    <div class="item">
-      <label>自定义标题文字</label>
-      <input type="text" id="prefix" value="距离夜坝卖命时间: ">
+
+    <!-- 设置弹窗 -->
+    <div id="modal">
+        <div class="panel">
+            <h3>设置</h3>
+            <div class="item">
+                <label>时间倍数（分钟）</label>
+                <input type="number" id="multi" value="4" min="1">
+            </div>
+            <div class="item">
+                <label>自定义标题文字</label>
+                <input type="text" id="prefix" value="距离夜坝卖命时间: ">
+            </div>
+            <div class="item">
+                <label>时间显示格式</label>
+                <select id="fmt">
+                    <option value="m分s秒">3分2秒</option>
+                    <option value="mm:ss">03:02</option>
+                    <option value="m分">只显示分</option>
+                    <option value="s秒">只显示总秒</option>
+                    <option value="mm:ss.fff">03:02.123（毫秒）</option>
+                </select>
+            </div>
+            <div class="item">
+                <label>主题预设</label>
+                <div class="theme-row">
+                    <div class="theme active" style="background:#0b1220" data-bg="#0b1220" data-text="#e0eaff" data-accent="#a0bfff"></div>
+                    <div class="theme" style="background:#1a1a1a" data-bg="#1a1a1a" data-text="#ffffff" data-accent="#ff4444"></div>
+                    <div class="theme" style="background:#000000" data-bg="#000000" data-text="#ffffff" data-accent="#00ccff"></div>
+                    <div class="theme" style="background:#ffffff" data-bg="#ffffff" data-text="#222222" data-accent="#0077ff"></div>
+                </div>
+            </div>
+            <div class="item">
+                <label>自定义颜色</label>
+                <div class="color-inputs">
+                    <input type="color" id="customBg" title="背景色">
+                    <input type="color" id="customText" title="文字色">
+                    <input type="color" id="customAccent" title="强调色">
+                </div>
+            </div>
+            <div class="btns">
+                <button id="save">保存并应用</button>
+                <button id="close">关闭</button>
+            </div>
+        </div>
     </div>
-    <div class="item">
-      <label>时间显示格式</label>
-      <select id="fmt">
-        <option value="m分s秒">3分2秒</option>
-        <option value="mm:ss">03:02</option>
-        <option value="m分">只显示分</option>
-        <option value="s秒">只显示总秒</option>
-        <option value="mm:ss.fff">03:02.123（毫秒）</option>
-      </select>
-    </div>
-    <div class="item">
-      <label>主题预设</label>
-      <div class="theme-row">
-        <div class="theme active" style="background:#0b1220" data-bg="#0b1220" data-text="#e0eaff" data-accent="#a0bfff"></div>
-        <div class="theme" style="background:#1a1a1a" data-bg="#1a1a1a" data-text="#ffffff" data-accent="#ff4444"></div>
-        <div class="theme" style="background:#000000" data-bg="#000000" data-text="#ffffff" data-accent="#00ccff"></div>
-        <div class="theme" style="background:#ffffff" data-bg="#ffffff" data-text="#222222" data-accent="#0077ff"></div>
-      </div>
-    </div>
-    <div class="item">
-      <label>自定义颜色</label>
-      <div class="color-inputs">
-        <input type="color" id="customBg" title="背景色">
-        <input type="color" id="customText" title="文字色">
-        <input type="color" id="customAccent" title="强调色">
-      </div>
-    </div>
-    <div class="btns">
-      <button id="save">保存并应用</button>
-      <button id="close">关闭</button>
-    </div>
-  </div>
-</div>
 
-<script>
-const STORAGE_KEY = "time_config";
-let config = {
-  multi: 4,
-  prefix: "距离夜坝卖命时间: ",
-  fmt: "m分s秒",
-  bg: "#0b1220",
-  text: "#e0eaff",
-  accent: "#a0bfff"
-};
+    <script>
+        const STORAGE_KEY = "time_config";
+        let config = {
+            multi: 4,
+            prefix: "距离夜坝卖命时间: ",
+            fmt: "m分s秒",
+            bg: "#0b1220",
+            text: "#e0eaff",
+            accent: "#a0bfff"
+        };
 
-const $ = s => document.querySelector(s);
+        const $ = s => document.querySelector(s);
 
-// 读取保存的配置
-function loadConfig() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      config = { ...config, ...parsed };
-    }
-  } catch (e) {}
-}
+        // 读取保存的配置
+        function loadConfig() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    config = { ...config, ...parsed };
+                }
+            } catch (e) {}
+        }
 
-// 保存配置
-function saveConfig() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
-}
+        // 保存配置
+        function saveConfig() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+        }
 
-// 应用颜色到界面
-function applyTheme() {
-  document.documentElement.style.setProperty("--bg", config.bg);
-  document.documentElement.style.setProperty("--text", config.text);
-  document.documentElement.style.setProperty("--accent", config.accent);
-}
+        // 应用颜色到界面
+        function applyTheme() {
+            document.documentElement.style.setProperty("--bg", config.bg);
+            document.documentElement.style.setProperty("--text", config.text);
+            document.documentElement.style.setProperty("--accent", config.accent);
+        }
 
-// 把配置同步到表单
-function syncForm() {
-  $("#multi").value = config.multi;
-  $("#prefix").value = config.prefix;
-  $("#fmt").value = config.fmt;
-  $("#customBg").value = config.bg;
-  $("#customText").value = config.text;
-  $("#customAccent").value = config.accent;
-}
+        // 把配置同步到表单
+        function syncForm() {
+            $("#multi").value = config.multi;
+            $("#prefix").value = config.prefix;
+            $("#fmt").value = config.fmt;
+            $("#customBg").value = config.bg;
+            $("#customText").value = config.text;
+            $("#customAccent").value = config.accent;
+        }
 
-$("#settings-btn").onclick = () => {
-  syncForm();
-  $("#modal").classList.add("show");
-};
-$("#close").onclick = () => $("#modal").classList.remove("show");
+        $("#settings-btn").onclick = () => {
+            syncForm();
+            $("#modal").classList.add("show");
+        };
+        $("#close").onclick = () => $("#modal").classList.remove("show");
 
-// 主题点选
-document.querySelectorAll(".theme").forEach(el => {
-  el.onclick = () => {
-    document.querySelectorAll(".theme").forEach(t => t.classList.remove("active"));
-    el.classList.add("active");
-    config.bg = el.dataset.bg;
-    config.text = el.dataset.text;
-    config.accent = el.dataset.accent;
-    applyTheme();
-  };
-});
+        // 主题点选
+        document.querySelectorAll(".theme").forEach(el => {
+            el.onclick = () => {
+                document.querySelectorAll(".theme").forEach(t => t.classList.remove("active"));
+                el.classList.add("active");
+                config.bg = el.dataset.bg;
+                config.text = el.dataset.text;
+                config.accent = el.dataset.accent;
+                applyTheme();
+            };
+        });
 
-// 自定义颜色实时生效
-$("#customBg").addEventListener("input", () => {
-  config.bg = $("#customBg").value;
-  applyTheme();
-});
-$("#customText").addEventListener("input", () => {
-  config.text = $("#customText").value;
-  applyTheme();
-});
-$("#customAccent").addEventListener("input", () => {
-  config.accent = $("#customAccent").value;
-  applyTheme();
-});
+        // 自定义颜色实时生效
+        $("#customBg").addEventListener("input", () => {
+            config.bg = $("#customBg").value;
+            applyTheme();
+        });
+        $("#customText").addEventListener("input", () => {
+            config.text = $("#customText").value;
+            applyTheme();
+        });
+        $("#customAccent").addEventListener("input", () => {
+            config.accent = $("#customAccent").value;
+            applyTheme();
+        });
 
-// 保存
-$("#save").onclick = () => {
-  config.multi = Number($("#multi").value) || 4;
-  config.prefix = $("#prefix").value;
-  config.fmt = $("#fmt").value;
-  saveConfig();
-  $("#modal").classList.remove("show");
-};
+        // 保存
+        $("#save").onclick = () => {
+            config.multi = Number($("#multi").value) || 4;
+            config.prefix = $("#prefix").value;
+            config.fmt = $("#fmt").value;
+            saveConfig();
+            $("#modal").classList.remove("show");
+        };
 
-// 时间同步
-let serverBaseMs = 0;
-let localBaseMs = 0;
+        // 时间同步
+        let serverBaseMs = 0;
+        let localBaseMs = 0;
 
-async function syncTime() {
-  try {
-    const start = Date.now();
-    const res = await fetch("http://time.syiban.com/haomiao.php", { cache: "no-store" });
-    const t = await res.text();
-    const serverMs = parseInt(t.trim(), 10);
-    const rtt = Date.now() - start;
-    serverBaseMs = serverMs + Math.round(rtt / 2);
-    localBaseMs = Date.now();
-  } catch (e) {
-    serverBaseMs = Date.now();
-    localBaseMs = Date.now();
-  }
-}
+        async function syncTime() {
+            try {
+                const start = Date.now();
+                const res = await fetch("http://time.syiban.com/haomiao.php", { cache: "no-store" });
+                const t = await res.text();
+                const serverMs = parseInt(t.trim(), 10);
+                const rtt = Date.now() - start;
+                serverBaseMs = serverMs + Math.round(rtt / 2);
+                localBaseMs = Date.now();
+            } catch (e) {
+                serverBaseMs = Date.now();
+                localBaseMs = Date.now();
+            }
+        }
 
-function now() {
-  if (!serverBaseMs) return new Date();
-  return new Date(serverBaseMs + (Date.now() - localBaseMs));
-}
+        function now() {
+            if (!serverBaseMs) return new Date();
+            return new Date(serverBaseMs + (Date.now() - localBaseMs));
+        }
 
-// 格式化
-function format(remMs, fmt) {
-  const m = Math.floor(remMs / 60000);
-  const s = Math.floor((remMs % 60000) / 1000);
-  const f = Math.floor(remMs % 1000);
-  if (fmt === "mm:ss") return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  if (fmt === "mm:ss.fff") return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(f).padStart(3, '0')}`;
-  if (fmt === "m分") return `${m}分`;
-  if (fmt === "s秒") return `${Math.round(remMs/1000)}秒`;
-  return `${m}分${s}秒`;
-}
+        // 格式化
+        function format(remMs, fmt) {
+            const m = Math.floor(remMs / 60000);
+            const s = Math.floor((remMs % 60000) / 1000);
+            const f = Math.floor(remMs % 1000);
+            if (fmt === "mm:ss") return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            if (fmt === "mm:ss.fff") return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(f).padStart(3, '0')}`;
+            if (fmt === "m分") return `${m}分`;
+            if (fmt === "s秒") return `${Math.round(remMs/1000)}秒`;
+            return `${m}分${s}秒`;
+        }
 
-// 更新显示
-function update() {
-  const d = now();
-  const totalMs = d.getMinutes()*60000 + d.getSeconds()*1000 + d.getMilliseconds();
-  const cycleMs = config.multi * 60000;
-  const remMs = cycleMs - (totalMs % cycleMs);
+        // 更新显示
+        function update() {
+            const d = now();
+            const totalMs = d.getMinutes()*60000 + d.getSeconds()*1000 + d.getMilliseconds();
+            const cycleMs = config.multi * 60000;
+            const remMs = cycleMs - (totalMs % cycleMs);
 
-  $("#now-time").textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
-  $("#target-time").textContent = config.prefix + format(remMs, config.fmt);
-}
+            $("#now-time").textContent = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+            $("#target-time").textContent = config.prefix + format(remMs, config.fmt);
+        }
 
-// 启动
-(async () => {
-  loadConfig();
-  applyTheme();
-  await syncTime();
-  update();
-  setInterval(update, 10);
-  setInterval(syncTime, 30000);
-})();
-</script>
+        // 启动
+        (async () => {
+            loadConfig();
+            applyTheme();
+            await syncTime();
+            update();
+            setInterval(update, 10);
+            setInterval(syncTime, 30000);
+        })();
+    </script>
 </body>
 </html>
