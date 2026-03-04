@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0b1220">
-    <title>夜坝卖命时间 - 全屏适配版</title>
+    <title>夜坝卖命时间 - 模板管理版</title>
     <style>
         /* 基础重置 - 消除所有默认边距和滚动 */
         * {
@@ -111,7 +111,7 @@
             background: #151c2d;
             padding: clamp(20px, 5vw, 30px);
             border-radius: 12px;
-            width: clamp(300px, 90vw, 450px);
+            width: clamp(300px, 90vw, 500px);
             max-width: 100%;
             color: white;
             max-height: 90vh;
@@ -122,6 +122,12 @@
             margin-bottom: clamp(15px, 4vw, 20px);
             font-size: clamp(18px, 4vw, 22px);
             text-align: center;
+        }
+
+        .template-section {
+            border-top: 1px solid #333;
+            padding-top: 15px;
+            margin-top: 15px;
         }
 
         .item {
@@ -143,6 +149,58 @@
             background: #242c3d;
             color: white;
             font-size: clamp(14px, 2.5vw, 16px);
+        }
+
+        /* 模板管理样式 */
+        .template-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        #template-name {
+            flex: 1;
+        }
+
+        .template-btn {
+            padding: 8px 10px;
+            font-size: 14px;
+        }
+
+        .template-list {
+            max-height: 120px;
+            overflow-y: auto;
+            background: #242c3d;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .template-item {
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .template-item:last-child {
+            border-bottom: none;
+        }
+
+        .template-item .actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .template-item button {
+            padding: 4px 8px;
+            font-size: 12px;
+            background: #3a4863;
+            color: white;
+        }
+
+        .template-item .delete {
+            background: #ff4444;
         }
 
         .btns {
@@ -228,7 +286,19 @@
     <!-- 设置弹窗 -->
     <div id="modal">
         <div class="panel">
-            <h3>设置</h3>
+            <h3>设置 & 模板管理</h3>
+            
+            <!-- 模板管理区域 -->
+            <div class="item template-section">
+                <label>自定义模板管理</label>
+                <div class="template-controls">
+                    <input type="text" id="template-name" placeholder="输入模板名称（如：默认模板、工作模板）">
+                    <button class="template-btn" id="save-template">保存模板</button>
+                </div>
+                <div class="template-list" id="template-list"></div>
+            </div>
+
+            <!-- 基础设置 -->
             <div class="item">
                 <label>时间倍数（分钟）</label>
                 <input type="number" id="multi" value="4" min="1">
@@ -272,7 +342,11 @@
     </div>
 
     <script>
-        const STORAGE_KEY = "time_config";
+        // 存储键名
+        const CONFIG_KEY = "time_config";
+        const TEMPLATES_KEY = "time_templates";
+        
+        // 当前配置
         let config = {
             multi: 4,
             prefix: "距离夜坝卖命时间: ",
@@ -282,12 +356,84 @@
             accent: "#a0bfff"
         };
 
+        // 模板列表
+        let templates = {};
+
         const $ = s => document.querySelector(s);
 
+        // ========== 模板管理核心功能 ==========
+        // 加载模板列表
+        function loadTemplates() {
+            try {
+                const saved = localStorage.getItem(TEMPLATES_KEY);
+                templates = saved ? JSON.parse(saved) : {};
+            } catch (e) {
+                templates = {};
+            }
+            renderTemplateList();
+        }
+
+        // 保存当前配置为模板
+        function saveCurrentAsTemplate(name) {
+            if (!name || name.trim() === "") {
+                alert("请输入模板名称！");
+                return;
+            }
+            templates[name.trim()] = { ...config };
+            localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+            renderTemplateList();
+            $("#template-name").value = "";
+            alert(`模板「${name}」保存成功！`);
+        }
+
+        // 加载指定模板
+        function loadTemplate(name) {
+            if (templates[name]) {
+                config = { ...templates[name] };
+                applyTheme();
+                syncForm();
+                alert(`已加载模板「${name}」`);
+            }
+        }
+
+        // 删除模板
+        function deleteTemplate(name) {
+            if (confirm(`确定删除模板「${name}」吗？`)) {
+                delete templates[name];
+                localStorage.setItem(TEMPLATES_KEY, JSON.stringify(templates));
+                renderTemplateList();
+            }
+        }
+
+        // 渲染模板列表
+        function renderTemplateList() {
+            const listEl = $("#template-list");
+            listEl.innerHTML = "";
+
+            if (Object.keys(templates).length === 0) {
+                listEl.innerHTML = '<div style="padding: 10px; text-align: center; color: #999;">暂无模板，可输入名称后保存</div>';
+                return;
+            }
+
+            Object.keys(templates).forEach(name => {
+                const item = document.createElement("div");
+                item.className = "template-item";
+                item.innerHTML = `
+                    <span>${name}</span>
+                    <div class="actions">
+                        <button onclick="loadTemplate('${name}')">使用</button>
+                        <button class="delete" onclick="deleteTemplate('${name}')">删除</button>
+                    </div>
+                `;
+                listEl.appendChild(item);
+            });
+        }
+
+        // ========== 原有配置功能 ==========
         // 读取保存的配置
         function loadConfig() {
             try {
-                const saved = localStorage.getItem(STORAGE_KEY);
+                const saved = localStorage.getItem(CONFIG_KEY);
                 if (saved) {
                     const parsed = JSON.parse(saved);
                     config = { ...config, ...parsed };
@@ -295,9 +441,9 @@
             } catch (e) {}
         }
 
-        // 保存配置
+        // 保存当前配置
         function saveConfig() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+            localStorage.setItem(CONFIG_KEY, JSON.stringify(config));
         }
 
         // 应用颜色到界面
@@ -317,11 +463,20 @@
             $("#customAccent").value = config.accent;
         }
 
+        // ========== 事件绑定 ==========
+        // 设置弹窗开关
         $("#settings-btn").onclick = () => {
             syncForm();
+            loadTemplates(); // 打开弹窗时刷新模板列表
             $("#modal").classList.add("show");
         };
         $("#close").onclick = () => $("#modal").classList.remove("show");
+
+        // 保存模板按钮
+        $("#save-template").onclick = () => {
+            const name = $("#template-name").value;
+            saveCurrentAsTemplate(name);
+        };
 
         // 主题点选
         document.querySelectorAll(".theme").forEach(el => {
@@ -349,16 +504,17 @@
             applyTheme();
         });
 
-        // 保存
+        // 保存当前配置
         $("#save").onclick = () => {
             config.multi = Number($("#multi").value) || 4;
             config.prefix = $("#prefix").value;
             config.fmt = $("#fmt").value;
             saveConfig();
             $("#modal").classList.remove("show");
+            alert("配置保存成功！");
         };
 
-        // 时间同步
+        // ========== 时间同步与显示 ==========
         let serverBaseMs = 0;
         let localBaseMs = 0;
 
@@ -382,7 +538,7 @@
             return new Date(serverBaseMs + (Date.now() - localBaseMs));
         }
 
-        // 格式化
+        // 格式化时间
         function format(remMs, fmt) {
             const m = Math.floor(remMs / 60000);
             const s = Math.floor((remMs % 60000) / 1000);
@@ -414,6 +570,10 @@
             setInterval(update, 10);
             setInterval(syncTime, 30000);
         })();
+
+        // 暴露模板操作函数到全局
+        window.loadTemplate = loadTemplate;
+        window.deleteTemplate = deleteTemplate;
     </script>
 </body>
 </html>
